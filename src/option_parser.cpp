@@ -6,6 +6,7 @@
 
 OptionParser::OptionParser()
     : m_map{std::map<std::string, OptionParser::OptionData *>()},
+      m_option_data_list{std::vector<OptionData *>()},
       m_options{std::vector<Option>()},
       m_args{std::vector<std::string>()},
       m_option_index{0},
@@ -15,17 +16,21 @@ OptionParser::OptionParser()
 
 OptionParser::~OptionParser()
 {
+    for (const auto &option_data: m_option_data_list)
+    {
+        delete option_data;
+    }
 }
 
 bool OptionParser::parse(int argc, char **argv)
 {
-    for (const auto &entry : m_map)
+    for (const auto &option_data : m_option_data_list)
     {
-        OptionParser::OptionData *data = entry.second;
-        std::string long_name = data->m_long_name;
+        m_map[option_data->m_name] = option_data;
+        std::string long_name = option_data->m_long_name;
         if (long_name.length() > 0)
         {
-            m_map[long_name] = data;
+            m_map[long_name] = option_data;
         }
     }
 
@@ -144,23 +149,9 @@ bool OptionParser::parse(int argc, char **argv)
         return false;
     }
 
-    std::vector<std::string> keys = [](std::map<std::string, OptionParser::OptionData *> &map) {
-        std::set<std::string> key_set;
-        for (const auto &entry : map)
-        {
-            OptionParser::OptionData *data = entry.second;
-            key_set.insert(data->m_name);
-        }
-        auto key_list = std::vector<std::string>{std::begin(key_set), std::end(key_set)};
-        std::sort(std::begin(key_list), std::end(key_list));
-        return key_list;
-    }(m_map);
-
     bool valid_only_by_itself = false;
-    for (const auto &k : keys)
+    for (const auto &data : m_option_data_list)
     {
-        OptionParser::OptionData *data = m_map[k];
-
         if (data->m_valid_only_by_itself)
         {
             auto itr = std::find_if(std::begin(m_options), std::end(m_options),
@@ -248,7 +239,7 @@ bool OptionParser::is_valid_option(const std::string &option)
 OptionParser::OptionData &OptionParser::new_option(char name)
 {
     OptionParser::OptionData *option_data = new OptionParser::OptionData(name);
-    m_map[std::string(1, name)] = option_data;
+    m_option_data_list.push_back(option_data);
     return *option_data;
 }
 

@@ -49,6 +49,7 @@ private:
     };
 
     std::map<std::string, OptionData *> m_map;
+    std::vector<OptionData *> m_option_data_list;
     std::vector<Option> m_options;
     std::vector<std::string> m_args;
     int m_option_index;
